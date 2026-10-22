@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GROUP9/CC101 — Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@700;900&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<style>
+html{background:#05050f;color:#f3f1ff}
+/* =========================================================
+   GROUP9 / CC101 — Neon Storm v2
+   Pure CSS animation. Scroll-driven reveals, flip cards,
+   ticker, progress bar, orbit, and profile pop-ups.
+   ========================================================= */
+
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+:root {
+  --bg: #05050f;
+  --bg2: #0c0a26;
+  --purple: #b44dff;
+  --blue: #2f8cff;
+  --green: #3dffa0;
+  --indigo: #8f7bff;
+  --pink: #ff4d94;
+  --text: #f3f1ff;
+  --muted: rgba(226, 222, 255, .72);
+  --glass: linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,.03) 45%, rgba(255,255,255,.09)), rgba(16, 12, 44, .42);
+  --gborder: rgba(255, 255, 255, .2);
+  --gshadow: 0 10px 36px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.28);
+  --body: "Inter", system-ui, sans-serif;
+  --head: "Space Grotesk", "Inter", sans-serif;
+  --tech: "Orbitron", "Space Grotesk", sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; scroll-padding-top: 110px; }
+
+body {
+  font-family: var(--body);
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  overflow-x: hidden;
+  cursor: crosshair;
+}
+a { color: inherit; text-decoration: none; }
+ul { list-style: none; }
+img { display: block; max-width: 100%; }
+
+/* ---------- Background layers ---------- */
+.bg {
+  position: fixed; inset: 0; z-index: -3;
+  background:
+    radial-gradient(1100px 700px at 12% -10%, rgba(180,77,255,.26), transparent 60%),
+    radial-gradient(900px 600px at 100% 40%, rgba(47,140,255,.18), transparent 60%),
+    radial-gradient(800px 500px at 50% 110%, rgba(61,255,160,.1), transparent 60%),
+    linear-gradient(180deg, var(--bg), var(--bg2));
+}
+.blackhole {
+  position: fixed; left: 50%; top: 50%; z-index: -2;
+  width: 110vmin; height: 110vmin; margin: -55vmin 0 0 -55vmin;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent, var(--pink), var(--purple), var(--blue), var(--green), transparent);
+  -webkit-mask: radial-gradient(circle, transparent 28%, #000 34%, #000 62%, transparent 70%);
+          mask: radial-gradient(circle, transparent 28%, #000 34%, #000 62%, transparent 70%);
+  opacity: .22; filter: blur(14px);
+  animation: spin 40s linear infinite;
+  pointer-events: none;
+}
+.grid {
+  position: fixed; inset: 0; z-index: -1;
+  background:
+    linear-gradient(rgba(180,77,255,.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(47,140,255,.12) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 35%, #000 20%, transparent 78%);
+          mask-image: radial-gradient(ellipse 80% 70% at 50% 35%, #000 20%, transparent 78%);
+  animation: grid-scroll 14s linear infinite;
+  pointer-events: none;
+}
+.flash {
+  position: fixed; inset: 0; z-index: 95; pointer-events: none;
+  background: radial-gradient(circle at 78% 14%, rgba(200,150,255,.4), transparent 50%);
+  opacity: 0; animation: storm 8s infinite;
+}
+.scanlines {
+  position: fixed; inset: 0; z-index: 90; pointer-events: none; opacity: .5;
+  background: repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0 1px, transparent 1px 3px);
+}
+
+/* Scroll progress bar, driven by page scroll */
+.progress {
+  position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 100;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--blue), var(--purple), var(--green));
+  box-shadow: 0 0 12px var(--purple);
+  animation: grow linear both;
+  animation-timeline: scroll(root);
+}
+
+/* ---------- Boot intro ---------- */
+.boot {
+  position: fixed; inset: 0; z-index: 200;
+  display: grid; place-content: center; gap: 18px; text-align: center;
+  background: var(--bg);
+  animation: boot-out .7s ease 1.7s forwards;
+  pointer-events: none;
+}
+.boot-text {
+  font-family: var(--tech); font-size: .95rem; letter-spacing: .2em;
+  color: var(--green); text-transform: uppercase;
+  animation: blink .5s step-end infinite alternate;
+}
+.boot-bar { width: 200px; height: 2px; margin: 0 auto; background: rgba(255,255,255,.1); overflow: hidden; }
+.boot-bar span {
+  display: block; height: 100%; background: var(--green);
+  box-shadow: 0 0 10px var(--green); transform-origin: left;
+  animation: fill 1.5s cubic-bezier(.2,.8,.2,1) forwards;
+}
+
+/* ---------- Navigation ---------- */
+.nav {
+  position: fixed; top: 14px; left: 0; right: 0; z-index: 50;
+  margin: 0 auto; width: min(1140px, calc(100% - 32px));
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 10px 12px 10px 20px; border-radius: 999px;
+  background: var(--glass);
+  backdrop-filter: blur(20px) saturate(170%); -webkit-backdrop-filter: blur(20px) saturate(170%);
+  border: 1px solid var(--gborder); box-shadow: var(--gshadow);
+  animation: drop-in 1s cubic-bezier(.2,.8,.2,1) 2s both;
+}
+.logo {
+  font-family: var(--tech); font-weight: 700; font-size: .8rem; letter-spacing: .1em; white-space: nowrap;
+  background: linear-gradient(100deg, var(--blue), var(--purple) 50%, var(--green));
+  background-size: 200% auto; -webkit-background-clip: text; background-clip: text;
+  color: transparent; animation: shift 6s linear infinite;
+}
+.links { display: flex; gap: 4px; }
+.links a {
+  position: relative; padding: 9px 16px; border-radius: 999px;
+  color: var(--muted); font-family: var(--head); font-size: .95rem;
+  transition: color .25s, background .25s, box-shadow .25s;
+}
+.links a:hover, .links a.active {
+  color: #fff; background: rgba(255,255,255,.1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 0 16px rgba(180,77,255,.35);
+}
+
+/* Social dropdowns (CSS-only, native <details>) */
+.dd { position: relative; }
+.dd summary {
+  list-style: none; cursor: pointer; width: 38px; height: 38px; border-radius: 50%;
+  display: grid; place-items: center; color: var(--muted);
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+  transition: transform .25s, color .25s, box-shadow .25s;
+}
+.dd summary::-webkit-details-marker { display: none; }
+.dd summary:hover { color: #fff; transform: translateY(-2px); }
+.dd[open] summary { color: #fff; border-color: var(--purple); box-shadow: 0 0 15px rgba(180,77,255,.4); }
+.menu {
+  position: absolute; right: 0; top: calc(100% + 14px); width: 230px; padding: 12px;
+  display: grid; gap: 4px; border-radius: 16px;
+  background: rgba(10,5,20,.95); border: 1px solid rgba(255,255,255,.1);
+  box-shadow: 0 15px 40px rgba(0,0,0,.8);
+  animation: pop .25s cubic-bezier(.175,.885,.32,1.275);
+}
+.menu h6 {
+  font-family: var(--tech); font-size: .66rem; letter-spacing: .1em; font-weight: 600;
+  color: var(--purple); padding: 4px 8px 8px; margin-bottom: 4px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.menu a { padding: 10px 8px; border-radius: 8px; font-size: .85rem; transition: background .2s, padding .2s; }
+.menu a:hover { background: rgba(180,77,255,.2); padding-left: 14px; }
+
+/* ---------- Hero ---------- */
+.hero {
+  min-height: 100vh;
+  width: min(1140px, calc(100% - 32px)); margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 40px;
+  padding: 130px 0 60px;
+}
+.badge {
+  display: inline-flex; align-items: center; gap: 8px; margin-bottom: 28px;
+  padding: 6px 16px; border-radius: 999px; font-size: .8rem; color: #d1d5db;
+  border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.03);
+  animation: rise 1s cubic-bezier(.2,.8,.2,1) .3s both;
+}
+.badge i { font-style: normal; color: var(--purple); }
+h1 {
+  font-family: var(--tech); font-size: clamp(2.2rem, 5vw, 4rem); line-height: 1.12; letter-spacing: .01em;
+  text-shadow: 0 0 30px rgba(180,77,255,.35);
+  animation: rise 1s .5s both;
+}
+.grad {
+  background: linear-gradient(100deg, var(--blue), var(--purple) 45%, var(--green) 90%, var(--blue));
+  background-size: 220% auto; -webkit-background-clip: text; background-clip: text;
+  color: transparent; animation: shift 6s linear infinite;
+}
+.lead { margin-top: 24px; max-width: 52ch; color: var(--muted); font-size: 1.05rem; animation: rise 1s .7s both; }
+.cta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 34px; animation: rise 1s .9s both; }
+
+.btn {
+  position: relative; overflow: hidden; display: inline-flex; align-items: center;
+  padding: 13px 26px; border-radius: 999px; font-family: var(--tech); font-weight: 700;
+  font-size: .74rem; letter-spacing: .08em; border: 1px solid rgba(255,255,255,.25);
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+}
+.btn::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.45) 50%, transparent 70%);
+  transform: translateX(-120%);
+}
+.btn:hover { transform: translateY(-2px); }
+.btn:hover::after { transform: translateX(120%); transition: transform .8s ease; }
+.btn-solid {
+  border-color: transparent; background: linear-gradient(120deg, var(--blue), var(--purple) 55%, var(--green));
+  background-size: 200% auto; animation: shift 6s linear infinite;
+  box-shadow: 0 0 22px rgba(180,77,255,.45);
+}
+.btn-solid:hover { box-shadow: 0 0 36px rgba(180,77,255,.85), 0 0 60px rgba(47,140,255,.4); }
+.btn-ghost { background: var(--glass); backdrop-filter: blur(14px); }
+.btn-ghost:hover { border-color: rgba(47,140,255,.7); box-shadow: 0 0 22px rgba(47,140,255,.5); }
+
+/* Orbiting team portraits */
+.orbit {
+  position: relative; width: 100%; max-width: 540px; aspect-ratio: 1; justify-self: center;
+  transform-style: preserve-3d; animation: tilt 10s infinite alternate ease-in-out;
+}
+.ring {
+  position: absolute; top: 50%; left: 50%; border-radius: 50%;
+  border: 1px solid rgba(168,85,247,.4); box-shadow: 0 0 30px rgba(168,85,247,.2);
+  animation: spin-ring 24s linear infinite;
+}
+.r1 { width: 62%; aspect-ratio: 1; }
+.r2 { width: 92%; aspect-ratio: 1; border-color: rgba(47,140,255,.35); animation-duration: 34s; animation-direction: reverse; }
+
+.node {
+  position: absolute; width: 96px; height: 96px; border-radius: 50%; isolation: isolate;
+  background: #0a0514; animation: float 6s ease-in-out infinite;
+}
+.node::before {
+  content: ""; position: absolute; inset: -3px; border-radius: 50%; z-index: -1;
+  background: conic-gradient(from var(--angle), transparent 20%, var(--accent), transparent 80%);
+  animation: spin-border 3s linear infinite;
+}
+.node::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%; z-index: -1; opacity: .6;
+  box-shadow: 0 0 20px var(--accent), inset 0 0 15px var(--accent);
+  transition: opacity .3s;
+}
+.node img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 3px solid var(--bg); transition: transform .4s cubic-bezier(.175,.885,.32,1.275); }
+.node:hover::after { opacity: 1; }
+.node:hover img { transform: scale(1.12); }
+.n1 { top: 8%;  left: 10%;  --accent: var(--purple); animation-delay: 0s; }
+.n2 { top: 18%; right: 6%;  --accent: var(--blue);   animation-delay: -1.5s; }
+.n3 { bottom: 14%; left: 8%;  --accent: var(--pink);  animation-delay: -3s; }
+.n4 { bottom: 6%; right: 14%; --accent: var(--green); animation-delay: -4.5s; }
+
+/* ---------- Ticker ---------- */
+.ticker {
+  overflow: hidden; white-space: nowrap; padding: 18px 0;
+  border-block: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+}
+.track {
+  display: flex; width: max-content; animation: marquee 28s linear infinite;
+  font-family: var(--tech); font-size: .85rem; letter-spacing: .14em; color: var(--muted);
+}
+.track span { margin-right: 48px; }
+.track span::after { content: "✦"; margin-left: 48px; color: var(--green); text-shadow: 0 0 10px var(--green); }
+
+/* ---------- Sections ---------- */
+.section { width: min(1140px, calc(100% - 32px)); margin: 0 auto; padding: 100px 0; }
+.heading {
+  display: inline-block; font-family: var(--tech); font-size: clamp(1.4rem, 3.2vw, 2.2rem);
+  letter-spacing: .08em; padding-bottom: 10px; border-bottom: 2px solid;
+  border-image: linear-gradient(90deg, var(--blue), var(--purple), var(--green)) 1;
+  text-shadow: 0 0 18px rgba(180,77,255,.5);
+}
+.sub { margin: 14px 0 44px; color: var(--muted); }
+
+/* Scroll-driven reveal: elements rise as they enter the viewport.
+   Browsers without support simply show the content. */
+@supports (animation-timeline: view()) {
+  .reveal {
+    animation: rise linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 35%;
+  }
+}
+
+/* ---------- Team flip cards ---------- */
+.team-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.flip { height: 330px; perspective: 1000px; }
+.flip-in {
+  position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
+  transition: transform .8s cubic-bezier(.2,.8,.2,1);
+}
+.flip:hover .flip-in, .flip:focus-within .flip-in { transform: rotateY(180deg); }
+.face {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px; padding: 24px 20px;
+  text-align: center; border-radius: 16px;
+  background: var(--glass); backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, rgba(255,255,255,.15));
+  box-shadow: var(--gshadow), 0 0 22px color-mix(in srgb, var(--accent) 22%, transparent);
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+}
+.back { transform: rotateY(180deg); }
+.avatar {
+  width: 112px; height: 112px; border-radius: 50%; overflow: hidden;
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--accent) 65%, transparent);
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.face h3 { font-family: var(--head); font-size: 1.2rem; line-height: 1.25; }
+.role {
+  font-family: var(--tech); font-size: .7rem; letter-spacing: .1em; color: var(--accent);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+.back p { color: var(--muted); font-size: .95rem; }
+.back .small { font-size: .82rem; color: var(--text); opacity: .8; }
+.more {
+  margin-top: 6px; font-family: var(--tech); font-size: .7rem; letter-spacing: .08em;
+  color: var(--accent); padding: 8px 14px; border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent); border-radius: 999px;
+}
+.more:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+
+/* ---------- Services ---------- */
+.services { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.svc {
+  padding: 26px 22px; border-radius: 16px; background: var(--glass);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, rgba(255,255,255,.12));
+  box-shadow: var(--gshadow); transition: transform .3s, box-shadow .3s, border-color .3s;
+}
+.svc:hover {
+  transform: translateY(-6px); border-color: var(--accent);
+  box-shadow: var(--gshadow), 0 0 28px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.dot {
+  display: block; width: 12px; height: 12px; border-radius: 50%; background: var(--accent);
+  box-shadow: 0 0 14px var(--accent); animation: pulse-dot 2.4s ease-in-out infinite;
+}
+.svc h3 { margin: 16px 0 8px; font-family: var(--head); font-size: 1.15rem; }
+.svc p { color: var(--muted); font-size: .94rem; }
+
+/* ---------- Contact ---------- */
+.contacts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.contact {
+  display: flex; flex-direction: column; gap: 8px; padding: 28px; border-radius: 16px;
+  background: var(--glass); border: 1px solid color-mix(in srgb, var(--accent) 35%, rgba(255,255,255,.12));
+  box-shadow: var(--gshadow); transition: transform .3s, box-shadow .3s, border-color .3s;
+}
+.contact:hover {
+  transform: translateY(-5px); border-color: var(--accent);
+  box-shadow: var(--gshadow), 0 0 30px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.contact h3 { font-family: var(--head); font-size: 1.3rem; }
+.mail { margin: 10px 0; color: var(--muted); word-break: break-all; transition: color .2s; }
+.mail:hover { color: #fff; }
+.socials { display: flex; gap: 10px; margin-top: auto; }
+.socials a {
+  display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%;
+  font-size: .72rem; font-weight: 700; background: rgba(255,255,255,.06);
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  transition: background .2s, color .2s, transform .2s;
+}
+.socials a:hover { background: var(--accent); color: #000; transform: translateY(-3px) scale(1.08); }
+
+.foot {
+  padding: 40px 20px; text-align: center; color: var(--muted); font-size: .9rem;
+  border-top: 1px solid rgba(255,255,255,.05);
+}
+
+/* ---------- Profile pop-ups (CSS :target) ---------- */
+.modal { position: fixed; inset: 0; z-index: 120; display: none; place-items: center; padding: 16px; }
+.modal:target { display: grid; animation: fade .3s ease; }
+.scrim {
+  position: absolute; inset: 0; background: rgba(6,3,18,.85);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.panel {
+  position: relative; z-index: 1; width: min(580px, 100%); max-height: 90vh; overflow-y: auto;
+  padding: 36px 28px 28px; border-radius: 24px; text-align: center;
+  background: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.02) 45%, rgba(255,255,255,.08)), rgba(16,12,44,.95);
+  backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, rgba(255,255,255,.1));
+  box-shadow: 0 20px 60px rgba(0,0,0,.6), 0 0 44px color-mix(in srgb, var(--accent) 30%, transparent);
+  animation: pop-up .6s cubic-bezier(.2,.8,.2,1) both;
+  scrollbar-width: thin; scrollbar-color: var(--accent) transparent;
+}
+.panel > :not(.x) { animation: rise .6s cubic-bezier(.2,.8,.2,1) both; }
+.panel > :nth-child(2) { animation-delay: .08s; }
+.panel > :nth-child(3) { animation-delay: .14s; }
+.panel > :nth-child(4) { animation-delay: .2s; }
+.panel > :nth-child(5) { animation-delay: .26s; }
+.panel > :nth-child(6) { animation-delay: .32s; }
+.panel .avatar { width: 128px; height: 128px; margin: 0 auto 14px; }
+.panel h3 { font-family: var(--head); font-size: 1.6rem; line-height: 1.2; }
+.panel .role { display: block; margin-top: 6px; }
+.about { margin-top: 12px; color: var(--muted); }
+.x {
+  position: absolute; top: 14px; right: 14px; z-index: 2; width: 38px; height: 38px;
+  display: grid; place-items: center; border-radius: 50%; color: var(--accent);
+  background: rgba(255,255,255,.08); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  transition: background .2s, box-shadow .2s, transform .2s;
+}
+.x:hover { background: color-mix(in srgb, var(--accent) 20%, transparent); box-shadow: 0 0 16px var(--accent); transform: rotate(90deg); }
+.sec { margin-top: 24px; text-align: left; }
+.sec h4 {
+  margin-bottom: 10px; font-family: var(--tech); font-size: .74rem; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--accent); text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+.sec h4::before { content: "// "; opacity: .7; }
+.item {
+  display: grid; gap: 3px; margin-bottom: 8px; padding: 12px 14px; border-radius: 12px;
+  background: rgba(255,255,255,.05); border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+  border-left: 3px solid var(--accent); font-size: .92rem; line-height: 1.5;
+}
+.item span { color: var(--muted); font-size: .86rem; }
+.box {
+  padding: 12px 14px; border-radius: 12px; color: var(--muted); font-size: .92rem;
+  background: rgba(255,255,255,.05); border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+  border-left: 3px solid var(--accent);
+}
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips li {
+  padding: 6px 12px; border-radius: 999px; font-size: .84rem; font-weight: 500;
+  background: color-mix(in srgb, var(--accent) 15%, rgba(255,255,255,.05));
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 20%, transparent);
+  transition: transform .2s; cursor: default;
+}
+.chips li:hover { transform: translateY(-2px) scale(1.04); }
+.pmail { display: block; margin-top: 24px; color: var(--accent); font-weight: 600; overflow-wrap: anywhere; }
+.close {
+  display: inline-flex; margin: 16px auto 0; padding: 10px 24px; border-radius: 999px;
+  border: 1px solid var(--accent); font-family: var(--tech); font-size: .74rem; letter-spacing: .05em;
+  transition: background .2s, box-shadow .2s;
+}
+.close:hover { background: color-mix(in srgb, var(--accent) 20%, transparent); box-shadow: 0 0 15px var(--accent); }
+
+/* Per-member accents */
+.t { --accent: var(--purple); }
+.p { --accent: var(--blue); }
+.l { --accent: var(--pink); }
+.r { --accent: var(--green); }
+
+/* ---------- Keyframes ---------- */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin-ring { to { transform: translate(-50%, -50%) rotateX(62deg) rotateZ(360deg); } }
+@keyframes spin-border { to { --angle: 360deg; } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes tilt { from { transform: rotateY(-10deg) rotateX(5deg); } to { transform: rotateY(10deg) rotateX(-5deg); } }
+@keyframes marquee { to { transform: translateX(-50%); } }
+@keyframes grid-scroll { from { background-position: 0 0, 0 0; } to { background-position: 0 56px, 0 56px; } }
+@keyframes shift { from { background-position: 0% 50%; } to { background-position: 200% 50%; } }
+@keyframes storm {
+  0%, 84%, 100% { opacity: 0; }
+  85% { opacity: .55; } 86% { opacity: .1; } 87% { opacity: .4; } 90% { opacity: 0; }
+}
+@keyframes rise { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
+@keyframes pop-up { from { opacity: 0; transform: translateY(24px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes pop { from { opacity: 0; transform: translateY(-10px) scale(.95); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes drop-in { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: none; } }
+@keyframes blink { from { opacity: 1; } to { opacity: .3; } }
+@keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes boot-out { to { opacity: 0; visibility: hidden; } }
+@keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes pulse-dot { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.35); } }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1024px) {
+  .hero { grid-template-columns: 1fr; text-align: center; padding-top: 120px; }
+  .cta { justify-content: center; }
+  .lead { margin-inline: auto; }
+  .orbit { max-width: 440px; }
+  .team-grid, .services { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 680px) {
+  .links { display: none; }
+  .team-grid, .services, .contacts { grid-template-columns: 1fr; }
+  .orbit { max-width: 340px; }
+  .node { width: 72px; height: 72px; }
+  .section { padding: 70px 0; }
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .boot { display: none; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- Ambient layers -->
+<div class="bg"></div>
+<div class="blackhole"></div>
+<div class="grid"></div>
+<div class="flash"></div>
+<div class="scanlines"></div>
+<div class="progress"></div>
+
+<!-- Boot intro -->
+<div class="boot">
+  <div class="boot-text">Initializing system…</div>
+  <div class="boot-bar"><span></span></div>
+</div>
+
+<!-- Navigation -->
+<header class="nav">
+  <div class="logo">GROUP9/CC101</div>
+
+  <nav class="links">
+    <a href="#home" class="active">Home</a>
+    <a href="#team">Team</a>
+    <a href="#projects">Projects</a>
+    <a href="#contact">Contact</a>
+  </nav>
+
+  <div style="display:flex;gap:10px">
+    <details class="dd">
+      <summary aria-label="Instagram links">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6"/></svg>
+      </summary>
+      <div class="menu">
+        <h6>Instagram</h6>
+        <a href="https://www.instagram.com/trixieannmonterozo5/" target="_blank" rel="noopener">Gutierrez Trixie</a>
+        <a href="https://www.instagram.com/w.poyowen/" target="_blank" rel="noopener">Poyowen Wredge</a>
+        <a href="https://www.instagram.com/who_is_sly/" target="_blank" rel="noopener">Lalata Sylvester</a>
+        <a href="https://www.instagram.com/mthw_ian_rms/" target="_blank" rel="noopener">Ramos Ian Matthew</a>
+      </div>
+    </details>
+
+    <details class="dd">
+      <summary aria-label="Facebook links">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+      </summary>
+      <div class="menu">
+        <h6>Facebook</h6>
+        <a href="https://www.facebook.com/share/14rW1Mbj62F/" target="_blank" rel="noopener">Gutierrez Trixie</a>
+        <a href="https://www.facebook.com/share/1F6Y9UbyWS/" target="_blank" rel="noopener">Poyowen Wredge</a>
+        <a href="https://www.facebook.com/share/1cdSmPzTH2/" target="_blank" rel="noopener">Lalata Sylvester</a>
+        <a href="https://www.facebook.com/share/19N49rGbqg/" target="_blank" rel="noopener">Ramos Ian Matthew</a>
+      </div>
+    </details>
+
+    <details class="dd">
+      <summary aria-label="Email addresses">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,6 12,13 2,6"/></svg>
+      </summary>
+      <div class="menu">
+        <h6>Email</h6>
+        <a href="mailto:trixieanngutierrez30@gmail.com">Gutierrez Trixie</a>
+        <a href="mailto:wredgepoyowen@gmail.com">Poyowen Wredge</a>
+        <a href="mailto:sylvesterlalata@gmail.com">Lalata Sylvester</a>
+        <a href="mailto:matthewramosiandelim@gmail.com">Ramos Ian Matthew</a>
+      </div>
+    </details>
+  </div>
+</header>
+
+<main>
+  <!-- Hero -->
+  <section class="hero" id="home">
+    <div class="hero-text">
+      <span class="badge"><i>✦</i> Creative Collective Portfolio</span>
+      <h1>Meet the minds behind <span class="grad">the vision.</span></h1>
+      <p class="lead">We combine strategy, design, technology, and imagination to create digital experiences that stand out. Tap a portrait to meet the team.</p>
+      <div class="cta">
+        <a href="#projects" class="btn btn-solid">View our projects</a>
+        <a href="#team" class="btn btn-ghost">Meet the team</a>
+      </div>
+    </div>
+
+    <div class="orbit" aria-label="Team portraits">
+      <div class="ring r1"></div>
+      <div class="ring r2"></div>
+      <a href="#profile-trixie" class="node n1"><img src="https://cdn.phototourl.com/member/2026-10-06-3250d65f-32d4-4c34-8acc-488948521c72.png" alt="Gutierrez Trixie"></a>
+      <a href="#profile-poyowen" class="node n2"><img src="https://cdn.phototourl.com/member/2026-10-06-f96a6091-aec7-4c47-989b-9d509256b846.png" alt="Poyowen Wredge"></a>
+      <a href="#profile-lalata" class="node n3"><img src="https://cdn.phototourl.com/member/2026-10-06-c936c9a1-1502-4d89-8ff0-e6b5bd802ddd.png" alt="Lalata Sylvester"></a>
+      <a href="#profile-ramos" class="node n4"><img src="https://cdn.phototourl.com/member/2026-10-06-bf1d75c2-04a9-46a9-8b33-1f41714b6c31.png" alt="Ramos Ian Matthew"></a>
+    </div>
+  </section>
+
+  <!-- Ticker -->
+  <div class="ticker" aria-hidden="true">
+    <div class="track">
+      <span>Digital experiences</span><span>Brand identity</span><span>UI/UX design</span><span>Web development</span>
+      <span>Digital experiences</span><span>Brand identity</span><span>UI/UX design</span><span>Web development</span>
+    </div>
+  </div>
+
+  <!-- Team: flip cards -->
+  <section class="section" id="team">
+    <h2 class="heading reveal">The team</h2>
+    <p class="sub reveal">Hover or tap a card to flip it.</p>
+
+    <div class="team-grid">
+      <div class="flip t reveal" tabindex="0">
+        <div class="flip-in">
+          <div class="face">
+            <div class="avatar"><img src="https://cdn.phototourl.com/member/2026-10-06-3250d65f-32d4-4c34-8acc-488948521c72.png" alt="Gutierrez Trixie"></div>
+            <h3>Gutierrez Trixie</h3>
+            <span class="role">Brand Strategist</span>
+          </div>
+          <div class="face back">
+            <p>Trixie shapes how the team's ideas look, sound and feel.</p>
+            <p class="small">BSIT · University of Eastern Pangasinan</p>
+            <a href="#profile-trixie" class="more">View profile</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="flip p reveal" tabindex="0">
+        <div class="flip-in">
+          <div class="face">
+            <div class="avatar"><img src="https://cdn.phototourl.com/member/2026-10-06-f96a6091-aec7-4c47-989b-9d509256b846.png" alt="Poyowen Wredge"></div>
+            <h3>Poyowen Wredge</h3>
+            <span class="role">UI/UX Designer</span>
+          </div>
+          <div class="face back">
+            <p>Wredge designs clean, easy-to-use screens.</p>
+            <p class="small">BSIT · University of Eastern Pangasinan</p>
+            <a href="#profile-poyowen" class="more">View profile</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="flip l reveal" tabindex="0">
+        <div class="flip-in">
+          <div class="face">
+            <div class="avatar"><img src="https://cdn.phototourl.com/member/2026-10-06-c936c9a1-1502-4d89-8ff0-e6b5bd802ddd.png" alt="Lalata Sylvester"></div>
+            <h3>Lalata Sylvester</h3>
+            <span class="role">Creative Director</span>
+          </div>
+          <div class="face back">
+            <p>Sylvester guides the creative direction of the group.</p>
+            <p class="small">BSIT · University of Eastern Pangasinan</p>
+            <a href="#profile-lalata" class="more">View profile</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="flip r reveal" tabindex="0">
+        <div class="flip-in">
+          <div class="face">
+            <div class="avatar"><img src="https://cdn.phototourl.com/member/2026-10-06-bf1d75c2-04a9-46a9-8b33-1f41714b6c31.png" alt="Ramos Ian Matthew"></div>
+            <h3>Ramos Ian Matthew</h3>
+            <span class="role">Full-Stack Developer</span>
+          </div>
+          <div class="face back">
+            <p>Ian turns designs into working websites.</p>
+            <p class="small">BSIT · University of Eastern Pangasinan</p>
+            <a href="#profile-ramos" class="more">View profile</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section class="section" id="projects">
+    <h2 class="heading reveal">What we create</h2>
+    <p class="sub reveal">Four minds. One creative direction.</p>
+
+    <div class="services">
+      <article class="svc p reveal"><span class="dot"></span><h3>Digital Experiences</h3><p>We create digital experiences that feel engaging, easy to use, and enjoyable for people.</p></article>
+      <article class="svc t reveal"><span class="dot"></span><h3>Brand Identity</h3><p>We help brands find their unique voice and turn their ideas into a look and style people can remember.</p></article>
+      <article class="svc l reveal"><span class="dot"></span><h3>UI/UX Design</h3><p>We design clean and user-friendly interfaces that make websites and apps feel simple, natural, and enjoyable to use.</p></article>
+      <article class="svc r reveal"><span class="dot"></span><h3>Web Development</h3><p>We build responsive, reliable websites that look great, work smoothly, and bring ideas to life.</p></article>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section class="section" id="contact">
+    <h2 class="heading reveal">Let's build something unforgettable</h2>
+    <p class="sub reveal">Reach out to any of us directly.</p>
+
+    <div class="contacts">
+      <article class="contact t reveal">
+        <h3>Gutierrez Trixie</h3>
+        <span class="role">Brand Strategist</span>
+        <a href="mailto:trixieanngutierrez30@gmail.com" class="mail">trixieanngutierrez30@gmail.com</a>
+        <div class="socials">
+          <a href="https://www.instagram.com/trixieannmonterozo5/" target="_blank" rel="noopener" aria-label="Instagram">IG</a>
+          <a href="https://www.facebook.com/share/14rW1Mbj62F/" target="_blank" rel="noopener" aria-label="Facebook">FB</a>
+        </div>
+      </article>
+
+      <article class="contact p reveal">
+        <h3>Poyowen Wredge</h3>
+        <span class="role">UI/UX Designer</span>
+        <a href="mailto:wredgepoyowen@gmail.com" class="mail">wredgepoyowen@gmail.com</a>
+        <div class="socials">
+          <a href="https://www.instagram.com/w.poyowen/" target="_blank" rel="noopener" aria-label="Instagram">IG</a>
+          <a href="https://www.facebook.com/share/1F6Y9UbyWS/" target="_blank" rel="noopener" aria-label="Facebook">FB</a>
+        </div>
+      </article>
+
+      <article class="contact l reveal">
+        <h3>Lalata Sylvester</h3>
+        <span class="role">Creative Director</span>
+        <a href="mailto:sylvesterlalata@gmail.com" class="mail">sylvesterlalata@gmail.com</a>
+        <div class="socials">
+          <a href="https://www.instagram.com/who_is_sly/" target="_blank" rel="noopener" aria-label="Instagram">IG</a>
+          <a href="https://www.facebook.com/share/1cdSmPzTH2/" target="_blank" rel="noopener" aria-label="Facebook">FB</a>
+        </div>
+      </article>
+
+      <article class="contact r reveal">
+        <h3>Ramos Ian Matthew</h3>
+        <span class="role">Full-Stack Developer</span>
+        <a href="mailto:matthewramosiandelim@gmail.com" class="mail">matthewramosiandelim@gmail.com</a>
+        <div class="socials">
+          <a href="https://www.instagram.com/mthw_ian_rms/" target="_blank" rel="noopener" aria-label="Instagram">IG</a>
+          <a href="https://www.facebook.com/share/19N49rGbqg/" target="_blank" rel="noopener" aria-label="Facebook">FB</a>
+        </div>
+      </article>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">© 2026 GROUP9/CC101. All rights reserved.</footer>
+
+<!-- ================= PROFILE POP-UPS ================= -->
+
+<div class="modal" id="profile-trixie" role="dialog" aria-modal="true" aria-labelledby="name-trixie">
+  <a class="scrim" href="#team" aria-label="Close profile"></a>
+  <div class="panel t">
+    <a class="x" href="#team" aria-label="Close profile">✕</a>
+    <div class="avatar"><img src="https://cdn.phototourl.com/member/2026-10-06-3250d65f-32d4-4c34-8acc-488948521c72.png" alt="Portrait of Gutierrez Trixie"></div>
+    <h3 id="name-trixie">Gutierrez Trixie</h3>
+    <span class="role">Brand Strategist</span>
+    <p class="about">Trixie shapes how the team's ideas look, sound and feel.</p>
+
+    <section class="sec">
+      <h4>Education</h4>
+      <div class="item">
+        <strong>Bachelor of Science in Information Technology (BSIT)</strong>
+        <span>University of Eastern Pangasinan (UEP) · First-year student</span>
+        <span>Eager to learn more about programming, web development, and computer technology while developing my skills and knowledge in the field of Information Technology.</span>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h4>Skills</h4>
+      <ul class="chips">
+        <li>Basic C++ Programming</li><li>HTML and CSS</li><li>Computer Literacy</li>
+        <li>Communication</li><li>Teamwork</li><li>Problem Solving</li>
+      </ul>
+    </section>
+
+    <section class="sec">
+      <h4>Projects</h4>
+      <div class="item"><strong>Registration Form</strong><span>Collects basic user information.</span></div>
+      <div class="item"><strong>Simple Image Gallery</strong><span>Displays a collection of pictures on a webpage.</span></div>
+      <div class="item"><strong>Online Resume</strong><span>Presents educational background, skills, and experience.</span></div>
+      <div class="item"><strong>Color Changer</strong><span>Changes the background color of a webpage.</span></div>
+      <div class="item"><strong>Simple Quiz Game</strong><span>Allows users to answer questions and view their scores.</span></div>
+    </section>
+
+    <a class="pmail" href="mailto:trixieanngutierrez30@gmail.com">trixieanngutierrez30@gmail.com</a>
+    <a class="close" href="#team">Close profile</a>
+  </div>
+</div>
+
+<div class="modal" id="profile-poyowen" role="dialog" aria-modal="true" aria-labelledby="name-poyowen">
+  <a class="scrim" href="#team" aria-label="Close profile"></a>
+  <div class="panel p">
+    <a class="x" href="#team" aria-label="Close profile">✕</a>
+    <div class="avatar"><img src="https://cdn.phototourl.com/member/2026-10-06-f96a6091-aec7-4c47-989b-9d509256b846.png" alt="Portrait of Poyowen Wredge"></div>
+    <h3 id="name-poyowen">Poyowen Wredge</h3>
+    <span class="role">UI/UX Designer</span>
+    <p class="about">Wredge designs clean, easy-to-use screens.</p>
+
+    <section class="sec">
+      <h4>Education</h4>
+      <div class="item">
+        <strong>Bachelor of Science in Information Technology (BSIT)</strong>
+        <span>University of Eastern Pangasinan (UEP) · First-year student</span>
+        <span>Eager to gain knowledge in computer technology, programming, and software development while improving my technical and problem-solving skills.</span>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h4>Skills</h4>
+      <ul class="chips">
+        <li>Communication</li><li>Teamwork</li><li>Problem-Solving</li>
+        <li>Hardworking</li><li>Responsible</li><li>Willing to Learn</li>
+      </ul>
+    </section>
+
+    <section class="sec">
+      <h4>Projects</h4>
+      <p class="box">I am interested in learning about computer hardware, software, and basic programming. I aim to develop my computer skills, understand how technology works, and improve my problem-solving abilities through hands-on projects.</p>
+    </section>
+
+    <a class="pmail" href="mailto:wredgepoyowen@gmail.com">wredgepoyowen@gmail.com</a>
+    <a class="close" href="#team">Close profile</a>
+  </div>
+</div>
+
+<div class="modal" id="profile-lalata" role="dialog" aria-modal="true" aria-labelledby="name-lalata">
+  <a class="scrim" href="#team" aria-label="Close profile"></a>
+  <div class="panel l">
+    <a class="x" href="#team" aria-label="Close profile">✕</a>
+    <div class="avatar"><img src="https://cdn.phototourl.com/member/2026-10-06-c936c9a1-1502-4d89-8ff0-e6b5bd802ddd.png" alt="Portrait of Lalata Sylvester"></div>
+    <h3 id="name-lalata">Lalata Sylvester</h3>
+    <span class="role">Creative Director</span>
+    <p class="about">Sylvester guides the creative direction of the group.</p>
+
+    <section class="sec">
+      <h4>Education</h4>
+      <div class="item">
+        <strong>Bachelor of Science in Information Technology (BSIT)</strong>
+        <span>University of Eastern Pangasinan (UEP) · First-year student</span>
+        <span>As a beginner in the field of IT, I am eager to learn more about computers, programming, and software development. I look forward to gaining new knowledge, improving my technical skills, and preparing myself for future opportunities in the technology field.</span>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h4>Skills</h4>
+      <ul class="chips">
+        <li>Communication</li><li>Teamwork</li><li>Problem-Solving</li>
+        <li>Hardworking</li><li>Responsible</li><li>Willing to Learn</li><li>Open to New Experiences</li>
+      </ul>
+    </section>
+
+    <section class="sec">
+      <h4>Projects &amp; Interests</h4>
+      <p class="box">I am interested in learning more about computer hardware, software, and basic programming. I enjoy exploring how technology works and hope to improve my computer skills through hands-on activities and projects. I also want to develop my problem-solving skills and gain more practical experience in the field of Information Technology.</p>
+    </section>
+
+    <a class="pmail" href="mailto:sylvesterlalata@gmail.com">sylvesterlalata@gmail.com</a>
+    <a class="close" href="#team">Close profile</a>
+  </div>
+</div>
+
+<div class="modal" id="profile-ramos" role="dialog" aria-modal="true" aria-labelledby="name-ramos">
+  <a class="scrim" href="#team" aria-label="Close profile"></a>
+  <div class="panel r">
+    <a class="x" href="#team" aria-label="Close profile">✕</a>
+    <div class="avatar"><img src="https://cdn.phototourl.com/member/2026-10-06-bf1d75c2-04a9-46a9-8b33-1f41714b6c31.png" alt="Portrait of Ramos Ian Matthew"></div>
+    <h3 id="name-ramos">Ramos Ian Matthew</h3>
+    <span class="role">Full-Stack Developer</span>
+    <p class="about">Ian turns designs into working websites.</p>
+
+    <section class="sec">
+      <h4>Education</h4>
+      <div class="item">
+        <strong>Bachelor of Science in Information Technology (BSIT)</strong>
+        <span>University of Eastern Pangasinan (UEP) · First-year student</span>
+        <span>Developing my knowledge and skills in computers, programming, and technology.</span>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h4>Skills</h4>
+      <ul class="chips">
+        <li>Basic C++ Programming</li><li>HTML</li><li>Microsoft Office</li>
+        <li>Communication</li><li>Teamwork</li><li>Problem-Solving</li>
+      </ul>
+    </section>
+
+    <section class="sec">
+      <h4>Projects</h4>
+      <div class="item"><strong>My First Webpage</strong><span>A simple webpage introducing myself.</span></div>
+      <div class="item"><strong>Personal Profile</strong><span>A webpage containing my basic information.</span></div>
+      <div class="item"><strong>Simple Calculator</strong><span>A basic program for solving mathematical operations.</span></div>
+      <div class="item"><strong>Favorite Things</strong><span>A webpage showing my hobbies and interests.</span></div>
+      <div class="item"><strong>Simple Menu</strong><span>A basic C++ program that displays a list of food items.</span></div>
+    </section>
+
+    <a class="pmail" href="mailto:matthewramosiandelim@gmail.com">matthewramosiandelim@gmail.com</a>
+    <a class="close" href="#team">Close profile</a>
+  </div>
+</div>
+
+</body>
+</html>
